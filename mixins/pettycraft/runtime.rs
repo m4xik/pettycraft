@@ -15,9 +15,11 @@
 //   mob_damage_event HEAD -> damaged      the hit landed: report it
 //   native_tick HEAD     -> tick          due effects/messages, upkeep, saves
 //   native_world_lifecycle HEAD -> lifecycle  save on close
-//   run_command / guest_command HEAD      /pettycraft
+//   register_commands HEAD -> register_commands   /pettycraft in the tree
+//   perform_command HEAD   -> perform_command     runs it
 
 use super::Game;
+use horizon_client::mod_api::{NativeCommand, NativeServerPlayer};
 use horizon_client::particles::{ParticleOptions, ParticleType};
 use horizon_client::text::Text;
 use pettycraft_core::{
@@ -307,82 +309,70 @@ fn tell(game: &mut Game<'_>, player: PlayerId, text: &str) -> bool {
     false
 }
 
-/// `/pettycraft [status|pending|save]` on the authoritative game, for the
-/// acting player; None when it is not this mod's command.
-pub(super) fn command(game: &mut Game<'_>, command: &str) -> Option<bool> {
-    let mut words = command.trim_start_matches('/').split_whitespace();
-    if words.next() != Some(MOD_ID) {
-        return None;
-    }
-    if !authoritative(game) {
-        // A client connected to a server: the server answers.
-        return None;
-    }
-    let sub = words.next().unwrap_or("status");
-    let actor = PlayerId(Uuid(game.acting_player_uuid()));
-    let now = game.world.game_time;
-    let lines =
-        with_world(game, |_, world| match sub {
-            "status" => Some(world.runtime.report(Some(actor))),
-            "pending" => {
-                let mut out = vec![format!(
-                    "{} pending at tick {now}",
-                    world.runtime.state().schedule.len()
-                )];
-                out.extend(world.runtime.state().schedule.iter().take(10).map(
-                    |(due, a)| match a {
-                        Action::Effect { kind, entity, .. } => {
-                            format!("  {due}: effect {kind:?} at entity {entity}")
-                        }
-                        Action::Tell {
-                            player, attempts, ..
-                        } => format!("  {due}: message to {player} (attempt {})", attempts + 1),
-                    },
-                ));
-                Some(out)
-            }
-            "save" => {
-                world.dirty = true;
-                save(world, now);
-                Some(vec![if world.dirty || !world.writable {
-                    format!("PETTYCRAFT: not saved ({})", world.path.display())
-                } else {
-                    format!("PETTYCRAFT: saved to {}", world.path.display())
-                }])
-            }
-            _ => None,
-        });
-    match lines {
-        Some(lines) => {
-            for line in lines {
-                game.system_message(Text::literal(line));
-            }
-            Some(true)
-        }
-        None => {
-            game.command_failure(Text::literal("Usage: /pettycraft [status|pending|save]"));
-            Some(false)
-        }
-    }
+/// The `/pettycraft` usages, for the `register_commands` hook point: the
+/// server puts them in every player's command tree, so the chat box knows
+/// and completes them. Everyone may run them (level 0): they only read the
+/// world's PETTYCRAFT state, or save it.
+const USAGES: &[&str] = &[
+    "pettycraft",
+    "pettycraft status",
+    "pettycraft pending",
+    "pettycraft save",
+];
+
+/// HEAD of the `register_commands` hook point.
+pub(super) fn register_commands(commands: &mut Vec<NativeCommand>) {
+    commands.extend(USAGES.iter().map(|u| NativeCommand::new(u)));
 }
 
-/// HEAD of `guest_command`: queue a guest's `/pettycraft` to run as their own
-/// turn (it then reaches `run_command` with `lan_acting` set), as Veinminer
-/// does, instead of the dispatcher refusing an unknown command.
-pub(super) fn guest_command(host: &mut super::lan::LanHost, conn: u32, command: &str) -> bool {
-    if command.trim_start_matches('/').split_whitespace().next() != Some(MOD_ID) {
-        return false;
+/// HEAD of the `perform_command` hook point: a player's command (without its
+/// slash) that a mod registered, with that player's state swapped in.
+pub(super) fn perform_command(
+    game: &mut Game<'_>,
+    player: &NativeServerPlayer,
+    command: &str,
+    ran: &mut bool,
+) {
+    let mut words = command.split_whitespace();
+    if *ran || words.next() != Some(MOD_ID) || !authoritative(game) {
+        return;
     }
-    if let Some(permission) = host.hub.guest(conn).map(|g| g.permission) {
-        host.commands.push(super::lan_actions::GuestCommand {
-            conn,
-            command: command.trim_start_matches('/').to_owned(),
-            permission,
-            integrated: host.hub.config.integrated,
-            quiet: false,
-        });
+    *ran = true;
+    let actor = PlayerId(Uuid::from_u128(player.uuid));
+    let now = game.world.game_time;
+    let lines = with_world(game, |_, world| match words.next().unwrap_or("status") {
+        "status" => world.runtime.report(Some(actor)),
+        "pending" => {
+            let schedule = &world.runtime.state().schedule;
+            let mut out = vec![format!("{} pending at tick {now}", schedule.len())];
+            out.extend(schedule.iter().take(10).map(|(due, a)| match a {
+                Action::Effect { kind, entity, .. } => {
+                    format!("  {due}: effect {kind:?} at entity {entity}")
+                }
+                Action::Tell {
+                    player, attempts, ..
+                } => format!(
+                    "  {due}: message to {} (attempt {})",
+                    player.0.short(),
+                    attempts + 1
+                ),
+            }));
+            out
+        }
+        "save" => {
+            world.dirty = true;
+            save(world, now);
+            vec![if world.dirty || !world.writable {
+                format!("PETTYCRAFT: not saved ({})", world.path.display())
+            } else {
+                format!("PETTYCRAFT: saved to {}", world.path.display())
+            }]
+        }
+        _ => vec!["Usage: /pettycraft [status|pending|save]".to_owned()],
+    });
+    for line in lines {
+        game.native_feedback(Text::literal(line));
     }
-    true
 }
 
 #[cfg(test)]

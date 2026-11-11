@@ -277,7 +277,11 @@ fn the_report_lists_the_players_record() {
     recorded(&p.on_hit(&hit(Some(ALEX), CLARA, 7)));
     let lines = p.report(Some(ALEX)).join("\n");
     assert!(lines.contains("1 incidents"), "{lines}");
-    assert!(lines.contains(&CLARA.to_string()), "{lines}");
+    assert!(lines.contains(&CLARA.0.short()), "{lines}");
+    assert!(
+        !lines.contains(&CLARA.to_string()),
+        "full UUIDs wrap in chat: {lines}"
+    );
     assert!(lines.contains("grievance"), "{lines}");
     assert!(!p.report(None).join("\n").contains("you ("));
 }

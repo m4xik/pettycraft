@@ -29,6 +29,10 @@ impl Uuid {
             .iter()
             .fold(0u128, |acc, &part| (acc << 32) | u128::from(part as u32))
     }
+    /// The first 8 hex digits, for reports.
+    pub fn short(self) -> String {
+        format!("{:08x}", self.0[0] as u32)
+    }
 }
 
 impl fmt::Display for Uuid {
@@ -126,5 +130,6 @@ mod tests {
         let negative = Uuid([-1, 0, i32::MIN, 7]);
         assert_eq!(negative.to_string().parse::<Uuid>().unwrap(), negative);
         assert!("not-a-uuid".parse::<Uuid>().is_err());
+        assert_eq!(u.short(), "069a79f4");
     }
 }

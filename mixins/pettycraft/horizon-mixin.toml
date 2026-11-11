@@ -64,26 +64,28 @@ bindings = [
   { name = "phase", ty = "crate::game::native_lifecycle::WorldPhase", value = "phase" },
 ]
 
-# /pettycraft, the developer command (the Veinminer pattern).
+# /pettycraft, the developer command, through Horizon's command hook points:
+# registered in every player's command tree (completion, no "unknown
+# command"), and run with the player's state swapped in.
 [[injection]]
-id = "command"
+id = "register-commands"
 kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::commands::Game<'_>::run_command"
-helper = "command.rs"
+hook = "register_commands"
+hook_version = 1
+helper = "register.rs"
 bindings = [
-  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
-  { name = "command", ty = "&str", value = "command" },
+  { name = "commands", ty = "&mut Vec<horizon_client::mod_api::NativeCommand>", value = "&mut *commands" },
 ]
 
 [[injection]]
-id = "guest-command"
+id = "perform-command"
 kind = "HEAD"
-cancellable = true
-target = "horizon_client::game::lan_actions::Game<'_>::guest_command"
-helper = "guest-command.rs"
+hook = "perform_command"
+hook_version = 1
+helper = "perform.rs"
 bindings = [
-  { name = "host", ty = "&mut crate::game::lan::LanHost", value = "&mut *host" },
-  { name = "conn", ty = "u32", value = "conn" },
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "player", ty = "&horizon_client::mod_api::NativeServerPlayer", value = "player" },
   { name = "command", ty = "&str", value = "command" },
+  { name = "ran", ty = "&mut bool", value = "&mut *ran" },
 ]

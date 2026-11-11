@@ -46,6 +46,13 @@ const FILED: &[&str] = &[
     "Терпение {victim_gen} лопнуло: дело официально заведено.",
 ];
 
+/// New offences against a mob whose case is already filed: evidence.
+const EVIDENCE: &[&str] = &[
+    "Эпизод №{n} приобщён к делу. {victim} довольно кивает.",
+    "Адвокат {victim_gen} благодарит вас за новые улики по делу (эпизод №{n}).",
+    "{victim} молча дописывает эпизод №{n} в материалы дела.",
+];
+
 /// A wanted player is told so, after the line.
 const WANTED: &str = " Ваша репутация среди мобов: «в розыске».";
 
@@ -58,6 +65,8 @@ pub fn direct(scene: &Scene<'_>, config: &Config) -> Reaction {
     let victim_gen = scene.victim_name.unwrap_or("курицы");
     let (effect, template) = if scene.case == CaseState::Filed && scene.case_changed {
         (EffectKind::CaseFiled, pick(FILED, scene.incident))
+    } else if scene.case == CaseState::Filed {
+        (EffectKind::Outrage, pick(EVIDENCE, scene.incident))
     } else if scene.offences <= 1 {
         (EffectKind::Indignation, pick(FIRST, scene.incident))
     } else {
@@ -104,6 +113,11 @@ mod tests {
         assert!(again.line.contains('2'));
         let filed = direct(&scene(3, CaseState::Filed, true), &c);
         assert_eq!(filed.effect, EffectKind::CaseFiled);
+        // After filing, a new offence is evidence for the case, not a fresh grudge.
+        let evidence = direct(&scene(4, CaseState::Filed, false), &c);
+        assert_eq!(evidence.effect, EffectKind::Outrage);
+        assert!(evidence.line.contains("№4"), "{}", evidence.line);
+        assert!(evidence.line.contains("дел"), "{}", evidence.line);
     }
 
     #[test]

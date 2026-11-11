@@ -8,7 +8,7 @@ about comedy.
  ─────────────────────────────────────────────────────────────────────────
   Game::hurt_by_player ──HEAD──┐          Game::native_tick ──HEAD──┐
   Game::mob_damage_event ─HEAD─┤          native_world_lifecycle ─HEAD─┤
-  Game::run_command / guest_command ─HEAD (cancellable)─┐             │
+  native_register_commands / native_perform_command ─HEAD─┐           │
                                ▼                        ▼             ▼
  pettycraft_horizon  (support module crate::game::pettycraft, runtime.rs)
  ─────────────────────────────────────────────────────────────────────────

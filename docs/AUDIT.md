@@ -12,6 +12,13 @@
 >   `hurt_by_player`. The pending-hit record is therefore valid only for the
 >   same mob **and the same tick**.
 >
+> - `/pettycraft` now uses the command hook points `register_commands` v1
+>   (`Vec<mod_api::NativeCommand>`: the usage joins every player's command
+>   tree, so clients complete it instead of flagging it unknown) and
+>   `perform_command` v1 (`&NativeServerPlayer`, `command`, `ran`; replies
+>   through `Game::native_feedback`). The raw `run_command`/`guest_command`
+>   hooks below are gone.
+>
 > Every other API below type-checks unchanged at `fdc87ae`; the launcher
 > builds with horizon-mixins `5a64af9`.
 

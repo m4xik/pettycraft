@@ -21,12 +21,12 @@ court scene itself is a later milestone).
 Cargo.toml                       workspace (the core crate, for standalone tests)
 compatibility.json               pinned revisions
 mixins/pettycraft/               the native bundle
-  horizon-mixin.toml             crate, module and 6 HEAD injections
+  horizon-mixin.toml             crate, module and 6 HEAD injections (4 on hook points)
   core/                          pettycraft_core: rules, no Horizon types
     src/{incident,grudge,reputation,director,scenario,schedule,engine,store}.rs
     tests/mvp.rs                 the required scenarios
   runtime.rs                     pettycraft_horizon: crate::game::pettycraft
-  hurt.rs damaged.rs tick.rs lifecycle.rs command.rs guest-command.rs
+  hurt.rs damaged.rs tick.rs lifecycle.rs register.rs perform.rs
 ```
 
 ## In game

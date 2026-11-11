@@ -10,6 +10,9 @@ use crate::scenario::{CaseState, ScenarioMachine, Transition};
 use crate::schedule::{Action, EffectKind, Schedule};
 use serde::{Deserialize, Serialize};
 
+/// Grudges listed in the debug report.
+const REPORT_GRUDGES: usize = 8;
+
 /// Counters for the debug report.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Stats {
@@ -234,35 +237,45 @@ impl Pettycraft {
                 s.schedule.len(),
             ),
             format!(
-                "hits {} | duplicates {} | rate-limited {} | no attacker {} | untracked {}",
+                "hits {} | dup {} | limited {} | no attacker {} | other mobs {}",
                 st.hits_seen, st.duplicates, st.rate_limited, st.no_attacker, st.untracked,
             ),
             format!(
-                "messages sent {} dropped {} | limits {pairs} pairs, {players} players",
+                "messages {} sent, {} dropped | limits {pairs}/{players}",
                 st.messages_sent, st.messages_dropped,
             ),
         ];
         if let Some(p) = player {
             let r = s.reputation.get(p);
             out.push(format!(
-                "you ({p}): score {}, {} offences, {}",
+                "you ({}): score {}, {} offences, {}",
+                p.0.short(),
                 r.score,
                 r.offences,
                 s.reputation.standing(p),
             ));
-            for g in s.grudges.against(p) {
+            // The most recent grudges first; the chat is not a database.
+            let mut grudges: Vec<_> = s.grudges.against(p).collect();
+            grudges.sort_by_key(|g| std::cmp::Reverse(g.last));
+            for g in grudges.iter().take(REPORT_GRUDGES) {
                 let case = s.cases.open_case(g.holder, p).map_or_else(
                     || "no case".to_owned(),
                     |c| format!("case #{} {}", c.id.0, c.state),
                 );
                 out.push(format!(
-                    "  {} {}: {} offences, intensity {}, {case}",
-                    g.species, g.holder, g.offences, g.intensity,
+                    "  {} {}: {}x, intensity {}, {case}",
+                    g.species.trim_start_matches("minecraft:"),
+                    g.holder.0.short(),
+                    g.offences,
+                    g.intensity,
                 ));
+            }
+            if grudges.len() > REPORT_GRUDGES {
+                out.push(format!("  ...and {} more", grudges.len() - REPORT_GRUDGES));
             }
             if let Some(last) = s.incidents.log().rev().find(|i| i.offender == p) {
                 out.push(format!(
-                    "  last incident #{} at tick {} ({:.0} {:.0} {:.0})",
+                    "  last #{} at tick {} ({:.0} {:.0} {:.0})",
                     last.id.0, last.tick, last.position[0], last.position[1], last.position[2],
                 ));
             }
