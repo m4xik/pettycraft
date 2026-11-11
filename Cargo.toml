@@ -1,0 +1,6 @@
+[workspace]
+# The core crate is a horizon-mixins bundle crate ([[crate]] in
+# mixins/pettycraft/horizon-mixin.toml). It is also a member here so that it
+# builds and tests standalone, without a Horizon checkout.
+members = ["mixins/pettycraft/core"]
+resolver = "2"

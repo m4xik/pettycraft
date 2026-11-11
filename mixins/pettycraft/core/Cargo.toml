@@ -1,0 +1,16 @@
+[package]
+name = "pettycraft-core"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "MIT"
+description = "PETTYCRAFT game rules: incidents, grudges, reputation, comedy director and case state machine"
+
+[lib]
+name = "pettycraft_core"
+
+# Only registry crates already in Horizon's Cargo.lock at the pinned revision
+# (horizon-mixins refuses anything else): serde 1.0.229, serde_json 1.0.151.
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

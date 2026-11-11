@@ -1,0 +1,89 @@
+[mod]
+id = "pettycraft"
+version = "0.1.0"
+priority = 100
+
+[compatibility]
+# Nightly 2026-10-30, the revision horizon-native-mod-template pins.
+horizon_revision = "ba6344a59cb9e755b730dcf02285fc0d33b97d3c"
+
+# The rules: an ordinary crate, staged as a workspace member that
+# horizon-client depends on.
+[[crate]]
+id = "core"
+path = "core"
+
+# The Horizon adapter (pettycraft_horizon): crate::game::pettycraft.
+[[module]]
+id = "runtime"
+file = "crates/horizon-client/src/game.rs"
+name = "pettycraft"
+source = "runtime.rs"
+
+# Damage. hurt_by_player's body has a closure, which RETURN/AFTER_* refuse,
+# so the landed hit is observed through its one callee that runs only when
+# the mob's health changed.
+[[injection]]
+id = "before-hurt"
+kind = "HEAD"
+target = "horizon_client::game::mace::Game<'_>::hurt_by_player"
+helper = "hurt.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "index", ty = "usize", value = "index" },
+  { name = "source", ty = "horizon_client::mobs::Damage", value = "source" },
+]
+
+[[injection]]
+id = "damaged"
+kind = "HEAD"
+target = "horizon_client::game::sculk::Game<'_>::mob_damage_event"
+helper = "damaged.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "id", ty = "u32", value = "id" },
+]
+
+# Server ticks and world close, through Horizon's stable hook points.
+[[injection]]
+id = "tick"
+kind = "HEAD"
+hook = "tick"
+hook_version = 1
+helper = "tick.rs"
+bindings = [{ name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" }]
+
+[[injection]]
+id = "lifecycle"
+kind = "HEAD"
+hook = "world_lifecycle"
+hook_version = 1
+helper = "lifecycle.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "phase", ty = "crate::game::native_lifecycle::WorldPhase", value = "phase" },
+]
+
+# /pettycraft, the developer command (the Veinminer pattern).
+[[injection]]
+id = "command"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::commands::Game<'_>::run_command"
+helper = "command.rs"
+bindings = [
+  { name = "game", ty = "&mut crate::game::Game<'_>", value = "&mut *self" },
+  { name = "command", ty = "&str", value = "command" },
+]
+
+[[injection]]
+id = "guest-command"
+kind = "HEAD"
+cancellable = true
+target = "horizon_client::game::lan_actions::Game<'_>::guest_command"
+helper = "guest-command.rs"
+bindings = [
+  { name = "host", ty = "&mut crate::game::lan::LanHost", value = "&mut *host" },
+  { name = "conn", ty = "u32", value = "conn" },
+  { name = "command", ty = "&str", value = "command" },
+]
