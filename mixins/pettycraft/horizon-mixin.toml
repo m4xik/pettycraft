@@ -4,8 +4,8 @@ version = "0.1.0"
 priority = 100
 
 [compatibility]
-# Nightly 2026-10-30, the revision horizon-native-mod-template pins.
-horizon_revision = "ba6344a59cb9e755b730dcf02285fc0d33b97d3c"
+# The Horizon the launcher installs and builds native mods on here.
+horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
 
 # The rules: an ordinary crate, staged as a workspace member that
 # horizon-client depends on.

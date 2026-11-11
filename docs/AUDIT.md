@@ -1,5 +1,20 @@
 # Technical audit — Horizon native mods for PETTYCRAFT
 
+> **Current pin: `fdc87ae`** (the Horizon the launcher installs here, and the
+> commit the player's other native mod pins). The audit below was first made
+> at `ba6344a`; porting to `fdc87ae` changed two things:
+>
+> - `Game::lan_send_particles` now takes one `lan_particles::QueuedParticle
+>   { dimension, options, state, at, spread, speed: [f64; 3], count: i32,
+>   randomization }` (as `fishing.rs::send_particles` builds it).
+> - `mob_damage_event` gained a second caller, the `/damage` command
+>   (`commands/world_cmds.rs:499`), which does not go through
+>   `hurt_by_player`. The pending-hit record is therefore valid only for the
+>   same mob **and the same tick**.
+>
+> Every other API below type-checks unchanged at `fdc87ae`; the launcher
+> builds with horizon-mixins `5a64af9`.
+
 Audited on 2026-11-11. Every symbol below was read in the source of the pinned
 revision (`git archive ba6344a`), not in `main`: `main` is far ahead
 (native-mods.md went from 156 to 5556 lines, with a named server hook catalog

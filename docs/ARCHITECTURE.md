@@ -4,7 +4,7 @@ Two layers. The rules know nothing about Horizon; the adapter knows nothing
 about comedy.
 
 ```text
- Horizon (pinned ba6344a, rewritten by horizon-mixins, never edited by hand)
+ Horizon (pinned fdc87ae, rewritten by horizon-mixins, never edited by hand)
  ─────────────────────────────────────────────────────────────────────────
   Game::hurt_by_player ──HEAD──┐          Game::native_tick ──HEAD──┐
   Game::mob_damage_event ─HEAD─┤          native_world_lifecycle ─HEAD─┤

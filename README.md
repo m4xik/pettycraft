@@ -6,8 +6,10 @@ remembers, gets visibly upset, and the offender hears about it a few seconds
 later. Repeat offences escalate the grudge until a case is **filed** (the
 court scene itself is a later milestone).
 
-- Pinned to Horizon `ba6344a` (Nightly 2026-10-30) and horizon-mixins
-  `d9c83d7` (0.6.0) — see [compatibility.json](compatibility.json).
+- Pinned to Horizon `fdc87ae` with horizon-mixins `5a64af9` (what the
+  launcher builds with); first audited on `ba6344a` / `d9c83d7` — see
+  [compatibility.json](compatibility.json). All native mods of one build must
+  pin the same Horizon commit.
 - [docs/AUDIT.md](docs/AUDIT.md): which Horizon APIs exist at the pin, which
   needed a mixin, and the limits.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): the two layers and one hit
@@ -52,10 +54,10 @@ cargo +1.95.0 clippy --workspace --all-targets --locked -- -D warnings
 cargo +1.95.0 test --workspace --locked
 ```
 
-Native (stage the bundle onto the pinned source and check the real game
-binary). `HORIZON_SRC` is a pristine export of `ba6344a` containing a
+Native (stage the bundle onto the pinned source; `apply` needs a fresh `--out` on Windows, and check the real game
+binary). `HORIZON_SRC` is a pristine export of `fdc87ae` containing a
 `.horizon-revision` file, for example the launcher's
-`native/source/ba6344a59cb9e755b730dcf02285fc0d33b97d3c`; on Windows put the
+`native/source/fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`; on Windows put the
 launcher's Rust and MinGW (`<launcher data>/rust/1.99.1-x86_64-pc-windows-gnu/bin`
 and `…/mingw64/bin`) first on `PATH`. Do not export with `git archive` under
 `core.autocrlf=true`: CRLF line endings break horizon-mixins' `Cargo.lock` edit.
@@ -69,11 +71,11 @@ horizon-mixins apply --workspace "$HORIZON_SRC" --mods mixins --out target/mixin
 ```
 
 ```bash
-cargo check --locked -p horizon-client --no-default-features --manifest-path target/mixins/modded/Cargo.toml
+cargo check --locked -p horizon-client --bin horizon-client --no-default-features --manifest-path target/mixins/modded/Cargo.toml
 ```
 
 ```bash
-cargo test --locked -p horizon-client --no-default-features --manifest-path target/mixins/modded/Cargo.toml -- game::pettycraft::tests
+cargo test --locked -p horizon-client --lib --manifest-path target/mixins/modded/Cargo.toml -- pettycraft
 ```
 
 To play it, install the bundle folder `mixins/pettycraft` as a native mod in

@@ -1,10 +1,10 @@
 {
   "horizon_repository": "https://github.com/horizon-rust/horizon",
-  "horizon_revision": "ba6344a59cb9e755b730dcf02285fc0d33b97d3c",
-  "horizon_nightly": "2026-10-30",
-  "native_hooks_api": 3,
+  "horizon_revision": "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca",
+  "native_hooks_api": 411,
   "horizon_mixins_repository": "https://github.com/horizon-rust/horizon-mixins",
-  "horizon_mixins_revision": "d9c83d7096b7ea5b83678da2efdfd6161f74997e",
-  "mixin_schema": 6,
+  "horizon_mixins_revision": "5a64af938ec86b00d53d16a408aabc0038fb3e57",
+  "first_audited_revision": "ba6344a59cb9e755b730dcf02285fc0d33b97d3c",
+  "first_audited_mixins_revision": "d9c83d7096b7ea5b83678da2efdfd6161f74997e",
   "template_revision": "cc8ce2d896782099abfa9f0abf26fa80c9e4bddb"
 }

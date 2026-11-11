@@ -38,6 +38,9 @@ const SAVE_EVERY: Tick = 1200;
 struct PendingHit {
     mob: u32,
     by_player: bool,
+    /// Valid only in this tick: `/damage` also reaches `mob_damage_event`,
+    /// without `hurt_by_player`, and must not inherit a stale record.
+    tick: Tick,
 }
 
 struct World {
@@ -125,6 +128,7 @@ pub(super) fn before_hurt(game: &mut Game<'_>, index: usize, source: horizon_cli
     PENDING.set(Some(PendingHit {
         mob: mob.id,
         by_player: source.attacker == Some(horizon_client::mobs::Who::Player),
+        tick: game.world.game_time,
     }));
 }
 
@@ -148,7 +152,7 @@ pub(super) fn damaged(game: &mut Game<'_>, id: u32) {
             return;
         }
         let attacker = pending
-            .filter(|p| p.mob == id && p.by_player)
+            .filter(|p| p.mob == id && p.by_player && p.tick == tick)
             .map(|_| PlayerId(Uuid(game.acting_player_uuid())));
         let hit = HitEvent {
             attacker,
@@ -257,7 +261,16 @@ fn perform(game: &mut Game<'_>, action: &Action) -> bool {
             // own particles, and the packet to the players it serves.
             game.particles
                 .send_particles(&options, at, spread, 0.0, count);
-            game.lan_send_particles(&options, at, spread, 0.0, count);
+            game.lan_send_particles(super::lan_particles::QueuedParticle {
+                dimension: game.dim.id(),
+                options,
+                state: None,
+                at,
+                spread,
+                speed: [0.0; 3],
+                count: count as i32,
+                randomization: 0,
+            });
             true
         }
         Action::Tell { player, text, .. } => tell(game, *player, text),
